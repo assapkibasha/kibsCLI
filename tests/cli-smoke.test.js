@@ -11,7 +11,10 @@ test("cli help exits successfully", () => {
   });
 
   assert.equal(result.status, 0);
-  assert.match(result.stdout, /Kibs CLI/);
+  assert.match(result.stdout, /Kibs CLI generates/);
+  assert.match(result.stdout, /init <project-name>/);
+  assert.match(result.stdout, /\badd\b/);
+  assert.match(result.stdout, /\bgenerate\b/);
 });
 
 test("cli version exits successfully", () => {
@@ -30,4 +33,41 @@ test("init without a project name fails", () => {
 
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /missing required argument/i);
+});
+
+test("add help lists subcommands", () => {
+  const result = spawnSync(process.execPath, [cliPath, "add", "--help"], {
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /\bentity\b/);
+  assert.match(result.stdout, /\bauth\b/);
+});
+
+test("add entity is a clear placeholder", () => {
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /not implemented yet/i);
+});
+
+test("add auth is a clear placeholder", () => {
+  const result = spawnSync(process.execPath, [cliPath, "add", "auth"], {
+    encoding: "utf8",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /not implemented yet/i);
+});
+
+test("generate is a clear placeholder", () => {
+  const result = spawnSync(process.execPath, [cliPath, "generate"], {
+    encoding: "utf8",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /not implemented yet/i);
 });

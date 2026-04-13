@@ -37,6 +37,8 @@ Do not add support for:
 - `tests/`: CLI and scaffold behavior tests
 
 Do not add new structural layers unless there is a clear second use case.
+Register commands through `src/commands/index.js`.
+Keep command files modular, with one file per command or subcommand where practical.
 
 ## Generator rules
 
@@ -51,3 +53,5 @@ Do not add new structural layers unless there is a clear second use case.
 - Update `README.md` when CLI behavior or generated output changes.
 - Add or update tests when command behavior or scaffolded files change.
 - Do not quietly expand scope beyond the fixed v1 product definition.
+- Placeholder commands are acceptable for announced features, but they must fail clearly and intentionally.
+- Keep command wiring separate from generation logic.

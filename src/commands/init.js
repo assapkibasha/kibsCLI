@@ -4,7 +4,7 @@ const logger = require("../utils/logger");
 function registerInitCommand(program) {
   program
     .command("init <project-name>")
-    .description("Create a new Kibs project")
+    .description("Create a new Kibs project from scratch")
     .action(async (projectName) => {
       logger.info(`Creating Kibs project: ${projectName}`);
 

@@ -39,6 +39,8 @@ npm install
 ```powershell
 node src/cli.js --help
 node src/cli.js init demo-app
+node src/cli.js add --help
+node src/cli.js generate
 ```
 
 You can also expose the local binary after install:
@@ -87,4 +89,23 @@ The backend starts on port `3001` by default and returns a basic JSON payload fr
 
 ## Current status
 
-This repository provides the CLI foundation and the first real scaffold path. Full CRUD/auth/report generation is not implemented yet.
+This repository provides the CLI foundation and the first real scaffold path.
+
+Currently available command status:
+
+- `kibs init`: implemented
+- `kibs add entity`: registered placeholder
+- `kibs add auth`: registered placeholder
+- `kibs generate`: registered placeholder
+
+## Test the CLI
+
+```powershell
+npm test
+node src/cli.js --help
+node src/cli.js add --help
+node src/cli.js add entity
+node src/cli.js add auth
+node src/cli.js generate
+node src/cli.js init demo-app
+```

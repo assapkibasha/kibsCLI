@@ -1,23 +1,9 @@
 #!/usr/bin/env node
 
-const { Command } = require("commander");
-const packageJson = require("../package.json");
-const { registerInitCommand } = require("./commands/init");
+const { runCli } = require("./app");
+const { handleCliError } = require("./utils/cli-errors");
 
-async function main(argv) {
-  const program = new Command();
-
-  program
-    .name("kibs")
-    .description("Kibs CLI - terminal-based full-stack CRUD system generator")
-    .version(packageJson.version);
-
-  registerInitCommand(program);
-
-  await program.parseAsync(argv);
-}
-
-main(process.argv).catch((error) => {
-  console.error(error.message);
+runCli(process.argv).catch((error) => {
+  handleCliError(error);
   process.exitCode = 1;
 });
