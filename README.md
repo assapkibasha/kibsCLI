@@ -110,6 +110,10 @@ Example:
 
 `entities`, `relationships`, and `reports` start empty in Phase 3. In Phase 4, `kibs add entity` writes entity definitions into `entities`.
 
+Entity names must be non-empty, trimmed, and use singular PascalCase such as `Employee` or `ParkingRecord`.
+
+Field names must be non-empty, trimmed, and use camelCase such as `firstName` or `departmentId`. Uppercase-first names, spaces, and underscore-based names are rejected.
+
 Entity example:
 
 ```json
@@ -139,6 +143,18 @@ Entity example:
   ]
 }
 ```
+
+Foreign keys must include `references`, the referenced entity must exist in `config.entities`, and self-referencing foreign keys are rejected in Kibs v1. Foreign key field names must stay in camelCase and end with `Id`, for example `departmentId`.
+
+## Phase 5 naming convention
+
+Kibs now exposes deterministic naming helpers for future generation phases. The convention is:
+
+- entity name: singular PascalCase, for example `ParkingRecord`
+- table name: plural snake_case, for example `parking_records`
+- route name: plural kebab-case, for example `parking-records`
+- controller name: plural PascalCase plus `Controller`, for example `ParkingRecordsController`
+- frontend page/component names: plural PascalCase plus `Page` and singular PascalCase plus `Form`
 
 ## Generated backend
 

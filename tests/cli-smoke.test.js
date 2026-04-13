@@ -101,11 +101,114 @@ test("add entity rejects duplicate entity names", () => {
   const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
     encoding: "utf8",
     cwd: tempDirectory,
-    input: "employee\n",
+    input: "Employee\n",
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /already exists/i);
+  assert.match(`${result.stdout}\n${result.stderr}`, /already exists/i);
+});
+
+test("add entity rejects unusable entity names during prompting", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee Profile\nEmployee\nfirstName\n1\ny\nn\n\n",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /must use PascalCase with no spaces/i);
+});
+
+test("add entity rejects uppercase field names during prompting", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\nEmployee\nfirstName\n1\ny\nn\n\n",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /must use camelCase with no spaces/i);
+});
+
+test("add entity rejects field names with spaces during prompting", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\nemployee name\nfirstName\n1\ny\nn\n\n",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /must use camelCase with no spaces/i);
+});
+
+test("add entity rejects duplicate field names within the same entity", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\nfirstName\n1\ny\nn\nfirstName\nlastName\n1\ny\nn\n\n",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /already in this entity/i);
+
+  const updatedConfig = JSON.parse(
+    fs.readFileSync(path.join(tempDirectory, "kibs.config.json"), "utf8")
+  );
+
+  assert.deepEqual(updatedConfig.entities[0].fields, [
+    {
+      name: "firstName",
+      type: "string",
+      required: true,
+      unique: false,
+    },
+    {
+      name: "lastName",
+      type: "string",
+      required: true,
+      unique: false,
+    },
+  ]);
+});
+
+test("add entity fails clearly when a foreign key points to an unknown entity", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\ndepartmentId\n7\nn\nn\nDepartment\n\n",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /must reference an existing entity/i);
+});
+
+test("add entity fails clearly for self-referencing foreign keys in v1", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\nmanagerId\n7\nn\nn\nEmployee\n\n",
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Self-referencing foreign keys are not supported/i);
 });
 
 test("add auth is a clear placeholder", () => {

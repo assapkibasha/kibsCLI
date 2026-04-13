@@ -1,18 +1,14 @@
 const fs = require("fs");
 const readline = require("node:readline/promises");
-const { loadConfig, saveConfig } = require("../../core/config");
+const { loadConfig, saveConfig, validateConfig } = require("../../core/config");
+const {
+  SUPPORTED_FIELD_TYPES,
+  normalizeNameKey,
+  validateEntityName,
+  validateFieldName,
+} = require("../../core/entity-definition");
 const { createUserError } = require("../../utils/cli-errors");
 const logger = require("../../utils/logger");
-
-const FIELD_TYPES = [
-  "string",
-  "number",
-  "date",
-  "boolean",
-  "text",
-  "enum",
-  "foreignKey",
-];
 
 function registerAddEntityCommand(program) {
   program
@@ -36,9 +32,13 @@ function registerAddEntityCommand(program) {
         logger.info("");
 
         const entity = await promptForEntity(promptSession, config);
+        const nextConfig = {
+          ...config,
+          entities: config.entities.concat(entity),
+        };
 
-        config.entities.push(entity);
-        saveConfig(projectDirectory, config);
+        validateConfig(nextConfig);
+        saveConfig(projectDirectory, nextConfig);
 
         logger.success(
           `Saved entity "${entity.name}" with ${entity.fields.length} field${entity.fields.length === 1 ? "" : "s"}.`
@@ -96,20 +96,20 @@ async function promptForEntity(promptSession, config) {
 }
 
 async function promptForEntityName(promptSession, entities) {
-  const existingNames = new Set(
-    entities.map((entity) => entity.name.trim().toLowerCase())
-  );
+  const existingNames = new Set(entities.map((entity) => normalizeNameKey(entity.name)));
 
   while (true) {
     const answer = await promptSession.ask("Entity name: ");
     const entityName = answer.trim();
 
-    if (!entityName) {
-      logger.info("Enter a name like Employee or Project.");
+    try {
+      validateEntityName(entityName, "Entity name");
+    } catch (error) {
+      logger.info(toPromptMessage(error.message, "Enter a name like Employee or Project."));
       continue;
     }
 
-    if (existingNames.has(entityName.toLowerCase())) {
+    if (existingNames.has(normalizeNameKey(entityName))) {
       throw createUserError(`An entity named "${entityName}" already exists.`);
     }
 
@@ -130,7 +130,19 @@ async function promptForFields(promptSession) {
       return fields;
     }
 
-    const normalizedFieldName = fieldName.toLowerCase();
+    try {
+      validateFieldName(fieldName, "Field name");
+    } catch (error) {
+      logger.info(
+        toPromptMessage(
+          error.message,
+          "Use camelCase like firstName or departmentId."
+        )
+      );
+      continue;
+    }
+
+    const normalizedFieldName = normalizeNameKey(fieldName);
 
     if (fieldNames.has(normalizedFieldName)) {
       logger.info(`Field "${fieldName}" is already in this entity. Choose a different name.`);
@@ -162,8 +174,8 @@ async function promptForFields(promptSession) {
 async function promptForFieldType(promptSession) {
   logger.info("Field types:");
 
-  for (let index = 0; index < FIELD_TYPES.length; index += 1) {
-    logger.info(`${index + 1}. ${FIELD_TYPES[index]}`);
+  for (let index = 0; index < SUPPORTED_FIELD_TYPES.length; index += 1) {
+    logger.info(`${index + 1}. ${SUPPORTED_FIELD_TYPES[index]}`);
   }
 
   while (true) {
@@ -174,7 +186,7 @@ async function promptForFieldType(promptSession) {
       continue;
     }
 
-    const typeByNumber = FIELD_TYPES[Number(answer) - 1];
+    const typeByNumber = SUPPORTED_FIELD_TYPES[Number(answer) - 1];
 
     if (typeByNumber) {
       return typeByNumber;
@@ -182,11 +194,13 @@ async function promptForFieldType(promptSession) {
 
     const normalizedAnswer = answer.toLowerCase();
 
-    if (FIELD_TYPES.includes(normalizedAnswer)) {
+    if (SUPPORTED_FIELD_TYPES.includes(normalizedAnswer)) {
       return normalizedAnswer;
     }
 
-    logger.info(`Use a number 1-${FIELD_TYPES.length} or type the field name exactly.`);
+    logger.info(
+      `Use a number 1-${SUPPORTED_FIELD_TYPES.length} or type the field name exactly.`
+    );
   }
 }
 
@@ -228,13 +242,36 @@ async function promptForReference(promptSession) {
     const answer = await promptSession.ask("Referenced entity name: ");
     const reference = answer.trim();
 
-    if (!reference) {
-      logger.info("Enter the entity this field points to, for example: Department");
+    try {
+      validateEntityName(reference, "Referenced entity name");
+    } catch (error) {
+      logger.info(
+        toPromptMessage(
+          error.message,
+          "Enter the entity this field points to, for example: Department"
+        )
+      );
       continue;
     }
 
     return reference;
   }
+}
+
+function toPromptMessage(errorMessage, fallbackMessage) {
+  if (typeof errorMessage !== "string") {
+    return fallbackMessage;
+  }
+
+  const firstLetterIndex = errorMessage.search(/[A-Za-z]/);
+
+  if (firstLetterIndex === -1) {
+    return fallbackMessage;
+  }
+
+  return `${errorMessage.charAt(firstLetterIndex).toUpperCase()}${errorMessage.slice(
+    firstLetterIndex + 1
+  )}`;
 }
 
 module.exports = {

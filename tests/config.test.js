@@ -9,6 +9,11 @@ const {
   saveConfig,
   validateConfig,
 } = require("../src/core/config");
+const {
+  validateEntityDefinition,
+  validateEntityName,
+  validateFieldName,
+} = require("../src/core/entity-definition");
 
 test("createDefaultConfig returns the stable v1 shape", () => {
   assert.deepEqual(createDefaultConfig("demo-app"), {
@@ -38,6 +43,18 @@ test("validateConfig accepts a valid v1 config", () => {
   const config = createDefaultConfig("demo-app");
 
   config.entities.push({
+    name: "Department",
+    fields: [
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        unique: false,
+      },
+    ],
+  });
+
+  config.entities.push({
     name: "Employee",
     fields: [
       {
@@ -64,6 +81,28 @@ test("validateConfig accepts a valid v1 config", () => {
   });
 
   assert.doesNotThrow(() => validateConfig(config));
+});
+
+test("validateEntityDefinition allows foreign keys without a project-level lookup set", () => {
+  assert.doesNotThrow(() =>
+    validateEntityDefinition({
+      name: "Employee",
+      fields: [
+        {
+          name: "managerId",
+          type: "foreignKey",
+          required: false,
+          unique: false,
+          references: "Manager",
+        },
+      ],
+    }, { requireKnownReferences: false })
+  );
+});
+
+test("validateFieldName accepts valid camelCase names", () => {
+  assert.doesNotThrow(() => validateFieldName("firstName", "Field name"));
+  assert.doesNotThrow(() => validateFieldName("departmentId", "Field name"));
 });
 
 test("validateConfig rejects invalid structures", () => {
@@ -148,7 +187,7 @@ test("validateConfig rejects invalid structures", () => {
             ],
           },
           {
-            name: "employee",
+            name: "Employee",
             fields: [
               { name: "lastName", type: "string", required: true, unique: false },
             ],
@@ -179,9 +218,40 @@ test("validateConfig rejects invalid structures", () => {
         ...createDefaultConfig("demo-app"),
         entities: [
           {
-            name: "Employee",
+            name: "Employee Profile",
             fields: [
               { name: "status", type: "enum", required: true, unique: false, values: [] },
+            ],
+          },
+        ],
+      }),
+    /PascalCase/
+  );
+  assert.throws(
+    () => validateEntityName("", "Entity name"),
+    /non-empty string/
+  );
+  assert.throws(
+    () => validateFieldName("Employee", "Field name"),
+    /camelCase/
+  );
+  assert.throws(
+    () => validateFieldName("employee Name", "Field name"),
+    /camelCase/
+  );
+  assert.throws(
+    () => validateFieldName(" firstName", "Field name"),
+    /must not start or end with spaces/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              { name: "statusValue", type: "enum", required: true, unique: false, values: [] },
             ],
           },
         ],
@@ -207,6 +277,75 @@ test("validateConfig rejects invalid structures", () => {
         ],
       }),
     /references/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              {
+                name: "departmentId",
+                type: "foreignKey",
+                required: false,
+                unique: false,
+                references: "Department",
+              },
+            ],
+          },
+        ],
+      }),
+    /must reference an existing entity/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              {
+                name: "managerId",
+                type: "foreignKey",
+                required: false,
+                unique: false,
+                references: "Employee",
+              },
+            ],
+          },
+        ],
+      }),
+    /Self-referencing foreign keys are not supported/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Department",
+            fields: [
+              { name: "title", type: "string", required: true, unique: false },
+            ],
+          },
+          {
+            name: "Employee",
+            fields: [
+              {
+                name: "department",
+                type: "foreignKey",
+                required: false,
+                unique: false,
+                references: "Department",
+              },
+            ],
+          },
+        ],
+      }),
+    /end with "Id"/
   );
 });
 
