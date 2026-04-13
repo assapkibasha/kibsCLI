@@ -40,6 +40,7 @@ npm install
 node src/cli.js --help
 node src/cli.js init demo-app
 node src/cli.js add --help
+node src/cli.js add entity
 node src/cli.js generate
 ```
 
@@ -107,7 +108,37 @@ Example:
 }
 ```
 
-`entities`, `relationships`, and `reports` start empty in Phase 3 and will be populated by later generation phases.
+`entities`, `relationships`, and `reports` start empty in Phase 3. In Phase 4, `kibs add entity` writes entity definitions into `entities`.
+
+Entity example:
+
+```json
+{
+  "name": "Employee",
+  "fields": [
+    {
+      "name": "firstName",
+      "type": "string",
+      "required": true,
+      "unique": false
+    },
+    {
+      "name": "status",
+      "type": "enum",
+      "required": true,
+      "unique": false,
+      "values": ["active", "inactive"]
+    },
+    {
+      "name": "departmentId",
+      "type": "foreignKey",
+      "required": false,
+      "unique": false,
+      "references": "Department"
+    }
+  ]
+}
+```
 
 ## Generated backend
 
@@ -126,7 +157,7 @@ This repository provides the CLI foundation and the first real scaffold path.
 Currently available command status:
 
 - `kibs init`: implemented
-- `kibs add entity`: registered placeholder
+- `kibs add entity`: implemented
 - `kibs add auth`: registered placeholder
 - `kibs generate`: registered placeholder
 
@@ -140,4 +171,11 @@ node src/cli.js add entity
 node src/cli.js add auth
 node src/cli.js generate
 node src/cli.js init demo-app
+```
+
+Try adding an entity inside a generated project:
+
+```powershell
+cd demo-app
+node ..\src\cli.js add entity
 ```

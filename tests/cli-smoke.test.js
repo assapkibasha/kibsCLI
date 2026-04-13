@@ -1,7 +1,10 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("fs");
+const os = require("os");
 const path = require("path");
 const { spawnSync } = require("node:child_process");
+const { createDefaultConfig, saveConfig } = require("../src/core/config");
 
 const cliPath = path.resolve(__dirname, "../src/cli.js");
 
@@ -45,13 +48,64 @@ test("add help lists subcommands", () => {
   assert.match(result.stdout, /\bauth\b/);
 });
 
-test("add entity is a clear placeholder", () => {
+test("add entity saves a new entity into kibs.config.json", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  saveConfig(tempDirectory, createDefaultConfig("demo-app"));
+
   const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
     encoding: "utf8",
+    cwd: tempDirectory,
+    input: "Employee\nfirstName\n1\ny\nn\n\n",
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Saved entity "Employee" with 1 field/i);
+
+  const updatedConfig = JSON.parse(
+    fs.readFileSync(path.join(tempDirectory, "kibs.config.json"), "utf8")
+  );
+
+  assert.deepEqual(updatedConfig.entities, [
+    {
+      name: "Employee",
+      fields: [
+        {
+          name: "firstName",
+          type: "string",
+          required: true,
+          unique: false,
+        },
+      ],
+    },
+  ]);
+});
+
+test("add entity rejects duplicate entity names", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-add-entity-"));
+  const config = createDefaultConfig("demo-app");
+
+  config.entities.push({
+    name: "Employee",
+    fields: [
+      {
+        name: "firstName",
+        type: "string",
+        required: true,
+        unique: false,
+      },
+    ],
+  });
+
+  saveConfig(tempDirectory, config);
+
+  const result = spawnSync(process.execPath, [cliPath, "add", "entity"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+    input: "employee\n",
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /not implemented yet/i);
+  assert.match(result.stderr, /already exists/i);
 });
 
 test("add auth is a clear placeholder", () => {

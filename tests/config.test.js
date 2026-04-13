@@ -37,6 +37,32 @@ test("createDefaultConfig returns the stable v1 shape", () => {
 test("validateConfig accepts a valid v1 config", () => {
   const config = createDefaultConfig("demo-app");
 
+  config.entities.push({
+    name: "Employee",
+    fields: [
+      {
+        name: "firstName",
+        type: "string",
+        required: true,
+        unique: false,
+      },
+      {
+        name: "status",
+        type: "enum",
+        required: true,
+        unique: false,
+        values: ["active", "inactive"],
+      },
+      {
+        name: "departmentId",
+        type: "foreignKey",
+        required: false,
+        unique: false,
+        references: "Department",
+      },
+    ],
+  });
+
   assert.doesNotThrow(() => validateConfig(config));
 });
 
@@ -109,6 +135,78 @@ test("validateConfig rejects invalid structures", () => {
   assert.throws(
     () => validateConfig({ ...createDefaultConfig("demo-app"), reports: {} }),
     /reports/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              { name: "firstName", type: "string", required: true, unique: false },
+            ],
+          },
+          {
+            name: "employee",
+            fields: [
+              { name: "lastName", type: "string", required: true, unique: false },
+            ],
+          },
+        ],
+      }),
+    /duplicate entity name/i
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              { name: "firstName", type: "string", required: true, unique: false },
+              { name: "firstName", type: "number", required: false, unique: false },
+            ],
+          },
+        ],
+      }),
+    /duplicate field name/i
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              { name: "status", type: "enum", required: true, unique: false, values: [] },
+            ],
+          },
+        ],
+      }),
+    /must not be empty/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        entities: [
+          {
+            name: "Employee",
+            fields: [
+              {
+                name: "departmentId",
+                type: "foreignKey",
+                required: false,
+                unique: false,
+              },
+            ],
+          },
+        ],
+      }),
+    /references/
   );
 });
 

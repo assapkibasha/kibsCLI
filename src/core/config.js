@@ -91,6 +91,7 @@ function validateConfig(config) {
   assertArray(config.entities, "entities");
   assertArray(config.relationships, "relationships");
   assertArray(config.reports, "reports");
+  validateEntities(config.entities);
 
   return config;
 }
@@ -134,6 +135,93 @@ function throwIfUnexpectedValue(value, fieldName, expectedValue) {
 function assertArray(value, fieldName) {
   if (!Array.isArray(value)) {
     throw new Error(`kibs.config.json field "${fieldName}" must be an array.`);
+  }
+}
+
+function validateEntities(entities) {
+  const entityNames = new Set();
+
+  for (let index = 0; index < entities.length; index += 1) {
+    const entity = entities[index];
+    const entityPath = `entities[${index}]`;
+
+    assertPlainObject(entity, entityPath);
+    assertNonEmptyString(entity.name, `${entityPath}.name`);
+    assertArray(entity.fields, `${entityPath}.fields`);
+
+    const normalizedEntityName = entity.name.trim().toLowerCase();
+
+    if (entityNames.has(normalizedEntityName)) {
+      throw new Error(`kibs.config.json contains a duplicate entity name: ${entity.name}.`);
+    }
+
+    entityNames.add(normalizedEntityName);
+    validateFields(entity.fields, entityPath, entity.name);
+  }
+}
+
+function validateFields(fields, entityPath, entityName) {
+  const fieldNames = new Set();
+
+  for (let index = 0; index < fields.length; index += 1) {
+    const field = fields[index];
+    const fieldPath = `${entityPath}.fields[${index}]`;
+
+    assertPlainObject(field, fieldPath);
+    assertNonEmptyString(field.name, `${fieldPath}.name`);
+    assertSupportedFieldType(field.type, `${fieldPath}.type`);
+    assertBoolean(field.required, `${fieldPath}.required`);
+    assertBoolean(field.unique, `${fieldPath}.unique`);
+
+    const normalizedFieldName = field.name.trim().toLowerCase();
+
+    if (fieldNames.has(normalizedFieldName)) {
+      throw new Error(
+        `kibs.config.json entity "${entityName}" contains a duplicate field name: ${field.name}.`
+      );
+    }
+
+    fieldNames.add(normalizedFieldName);
+
+    if (field.type === "enum") {
+      assertArray(field.values, `${fieldPath}.values`);
+
+      if (field.values.length === 0) {
+        throw new Error(`kibs.config.json field "${fieldPath}.values" must not be empty.`);
+      }
+
+      for (let valueIndex = 0; valueIndex < field.values.length; valueIndex += 1) {
+        assertNonEmptyString(field.values[valueIndex], `${fieldPath}.values[${valueIndex}]`);
+      }
+    }
+
+    if (field.type === "foreignKey") {
+      assertNonEmptyString(field.references, `${fieldPath}.references`);
+    }
+  }
+}
+
+function assertSupportedFieldType(value, fieldName) {
+  const supportedTypes = [
+    "string",
+    "number",
+    "date",
+    "boolean",
+    "text",
+    "enum",
+    "foreignKey",
+  ];
+
+  if (!supportedTypes.includes(value)) {
+    throw new Error(
+      `kibs.config.json field "${fieldName}" must be one of: ${supportedTypes.join(", ")}.`
+    );
+  }
+}
+
+function assertBoolean(value, fieldName) {
+  if (typeof value !== "boolean") {
+    throw new Error(`kibs.config.json field "${fieldName}" must be a boolean.`);
   }
 }
 
