@@ -1,0 +1,144 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const fs = require("fs");
+const os = require("os");
+const path = require("path");
+const {
+  createDefaultConfig,
+  loadConfig,
+  saveConfig,
+  validateConfig,
+} = require("../src/core/config");
+
+test("createDefaultConfig returns the stable v1 shape", () => {
+  assert.deepEqual(createDefaultConfig("demo-app"), {
+    version: 1,
+    projectName: "demo-app",
+    frontend: {
+      framework: "react",
+      styling: "tailwind",
+    },
+    backend: {
+      framework: "express",
+    },
+    database: {
+      client: "mysql",
+    },
+    auth: {
+      enabled: true,
+      mode: "session",
+    },
+    entities: [],
+    relationships: [],
+    reports: [],
+  });
+});
+
+test("validateConfig accepts a valid v1 config", () => {
+  const config = createDefaultConfig("demo-app");
+
+  assert.doesNotThrow(() => validateConfig(config));
+});
+
+test("validateConfig rejects invalid structures", () => {
+  assert.throws(() => validateConfig(null), /must be a JSON object/);
+  assert.throws(
+    () => validateConfig({ ...createDefaultConfig("demo-app"), version: 2 }),
+    /version = 1/
+  );
+  assert.throws(
+    () => validateConfig({ ...createDefaultConfig("demo-app"), projectName: "" }),
+    /projectName/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        frontend: { framework: "vue", styling: "tailwind" },
+      }),
+    /frontend\.framework/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        frontend: { framework: "react", styling: "css" },
+      }),
+    /frontend\.styling/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        backend: { framework: "nestjs" },
+      }),
+    /backend\.framework/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        database: { client: "postgres" },
+      }),
+    /database\.client/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        auth: { enabled: "yes", mode: "session" },
+      }),
+    /auth\.enabled/
+  );
+  assert.throws(
+    () =>
+      validateConfig({
+        ...createDefaultConfig("demo-app"),
+        auth: { enabled: true, mode: "jwt" },
+      }),
+    /auth\.mode/
+  );
+  assert.throws(
+    () => validateConfig({ ...createDefaultConfig("demo-app"), entities: {} }),
+    /entities/
+  );
+  assert.throws(
+    () => validateConfig({ ...createDefaultConfig("demo-app"), relationships: {} }),
+    /relationships/
+  );
+  assert.throws(
+    () => validateConfig({ ...createDefaultConfig("demo-app"), reports: {} }),
+    /reports/
+  );
+});
+
+test("saveConfig writes pretty JSON with a trailing newline", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-config-"));
+  const config = createDefaultConfig("demo-app");
+
+  saveConfig(tempDirectory, config);
+
+  const content = fs.readFileSync(path.join(tempDirectory, "kibs.config.json"), "utf8");
+
+  assert.match(content, /"projectName": "demo-app"/);
+  assert.equal(content.endsWith("\n"), true);
+});
+
+test("loadConfig reads a valid saved config", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-config-"));
+  const config = createDefaultConfig("demo-app");
+
+  saveConfig(tempDirectory, config);
+
+  assert.deepEqual(loadConfig(tempDirectory), config);
+});
+
+test("loadConfig rejects missing files and invalid JSON", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-config-"));
+
+  assert.throws(() => loadConfig(tempDirectory), /Could not find kibs\.config\.json/);
+
+  fs.writeFileSync(path.join(tempDirectory, "kibs.config.json"), "{invalid", "utf8");
+
+  assert.throws(() => loadConfig(tempDirectory), /invalid JSON/);
+});

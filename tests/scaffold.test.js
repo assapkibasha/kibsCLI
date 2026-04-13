@@ -39,19 +39,25 @@ test("scaffold creates the expected project structure", async () => {
   const config = JSON.parse(configContent);
 
   assert.deepEqual(config, {
-    name: "demo-app",
     version: 1,
-    stack: {
-      frontend: "react-tailwind",
-      backend: "express",
-      database: "mysql",
-      auth: "session",
+    projectName: "demo-app",
+    frontend: {
+      framework: "react",
+      styling: "tailwind",
     },
-    features: {
-      crud: true,
-      relationships: "simple",
-      reports: "simple",
+    backend: {
+      framework: "express",
     },
+    database: {
+      client: "mysql",
+    },
+    auth: {
+      enabled: true,
+      mode: "session",
+    },
+    entities: [],
+    relationships: [],
+    reports: [],
   });
 });
 

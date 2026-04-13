@@ -43,8 +43,11 @@ Keep command files modular, with one file per command or subcommand where practi
 ## Generator rules
 
 - Generated project structure must stay predictable and simple.
-- `kibs.config.json` is the initial contract for future generator features.
+- `kibs.config.json` is the source of truth for Kibs v1 generation.
 - Update the config schema intentionally and keep it aligned with v1 scope.
+- Keep config readable for beginners and easy to inspect manually.
+- Keep config utilities in `src/core/config.js`.
+- Use synchronous config operations unless an explicit migration is requested.
 - Avoid plugin systems, registries, or framework-style abstractions until a second real command or second generation path justifies them.
 
 ## Change discipline
@@ -52,6 +55,8 @@ Keep command files modular, with one file per command or subcommand where practi
 - Keep implementation simple and readable.
 - Update `README.md` when CLI behavior or generated output changes.
 - Add or update tests when command behavior or scaffolded files change.
+- Add or update tests when the config contract changes.
 - Do not quietly expand scope beyond the fixed v1 product definition.
 - Placeholder commands are acceptable for announced features, but they must fail clearly and intentionally.
 - Keep command wiring separate from generation logic.
+- Do not introduce schema libraries or advanced validation layers unless explicitly requested.

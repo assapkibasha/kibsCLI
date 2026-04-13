@@ -77,6 +77,38 @@ demo-app/
 
 The generated backend is runnable after installing its dependencies. The generated frontend is a structured starter prepared for React + Tailwind setup in future Kibs generation work, without introducing a frontend scaffolding framework here.
 
+## `kibs.config.json`
+
+`kibs.config.json` is the Kibs v1 source of truth for generated projects.
+
+Example:
+
+```json
+{
+  "version": 1,
+  "projectName": "demo-app",
+  "frontend": {
+    "framework": "react",
+    "styling": "tailwind"
+  },
+  "backend": {
+    "framework": "express"
+  },
+  "database": {
+    "client": "mysql"
+  },
+  "auth": {
+    "enabled": true,
+    "mode": "session"
+  },
+  "entities": [],
+  "relationships": [],
+  "reports": []
+}
+```
+
+`entities`, `relationships`, and `reports` start empty in Phase 3 and will be populated by later generation phases.
+
 ## Generated backend
 
 ```powershell
