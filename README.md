@@ -1,0 +1,90 @@
+# Kibs CLI
+
+Kibs CLI is a terminal-based full-stack CRUD system generator. This repository is the foundation for the CLI itself.
+
+## Version 1 scope
+
+- React + Tailwind frontend
+- Express backend
+- MySQL database
+- Session-based auth with username/password
+- CRUD entity generation
+- Simple relationships
+- Simple reports
+- New projects from scratch only
+
+## Out of scope
+
+- Next.js
+- NestJS
+- MongoDB
+- Existing-project patching
+- Advanced RBAC
+- AI code generation
+- Charts or advanced analytics
+
+## Requirements
+
+- Node.js 20 or newer
+- npm
+
+## Install
+
+```powershell
+npm install
+```
+
+## Run the CLI
+
+```powershell
+node src/cli.js --help
+node src/cli.js init demo-app
+```
+
+You can also expose the local binary after install:
+
+```powershell
+npm link
+kibs init demo-app
+```
+
+## What `kibs init` generates
+
+```text
+demo-app/
+  kibs.config.json
+  backend/
+    src/
+      app.js
+      server.js
+      routes/
+        index.js
+    package.json
+    .gitignore
+  frontend/
+    src/
+      app.js
+      main.js
+      styles.css
+    public/
+      index.html
+    package.json
+    .gitignore
+  README.md
+```
+
+The generated backend is runnable after installing its dependencies. The generated frontend is a structured starter prepared for React + Tailwind setup in future Kibs generation work, without introducing a frontend scaffolding framework here.
+
+## Generated backend
+
+```powershell
+cd demo-app\\backend
+npm install
+npm start
+```
+
+The backend starts on port `3001` by default and returns a basic JSON payload from `/`.
+
+## Current status
+
+This repository provides the CLI foundation and the first real scaffold path. Full CRUD/auth/report generation is not implemented yet.

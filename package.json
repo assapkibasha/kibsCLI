@@ -1,0 +1,19 @@
+{
+  "name": "kibs-cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kibs CLI repository foundation",
+  "bin": {
+    "kibs": "./src/cli.js"
+  },
+  "scripts": {
+    "cli": "node src/cli.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^14.0.0"
+  }
+}
