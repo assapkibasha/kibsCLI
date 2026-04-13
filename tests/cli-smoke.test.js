@@ -220,11 +220,57 @@ test("add auth is a clear placeholder", () => {
   assert.match(result.stderr, /not implemented yet/i);
 });
 
-test("generate is a clear placeholder", () => {
-  const result = spawnSync(process.execPath, [cliPath, "generate"], {
-    encoding: "utf8",
+test("generate writes backend files for config entities", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "kibs-generate-cli-"));
+  const config = createDefaultConfig("demo-app");
+
+  config.entities.push({
+    name: "Department",
+    fields: [
+      {
+        name: "title",
+        type: "string",
+        required: true,
+        unique: false,
+      },
+    ],
   });
 
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /not implemented yet/i);
+  config.entities.push({
+    name: "Employee",
+    fields: [
+      {
+        name: "firstName",
+        type: "string",
+        required: true,
+        unique: false,
+      },
+      {
+        name: "departmentId",
+        type: "foreignKey",
+        required: false,
+        unique: false,
+        references: "Department",
+      },
+    ],
+  });
+
+  fs.mkdirSync(path.join(tempDirectory, "backend"), { recursive: true });
+  saveConfig(tempDirectory, config);
+
+  const result = spawnSync(process.execPath, [cliPath, "generate"], {
+    encoding: "utf8",
+    cwd: tempDirectory,
+  });
+
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /Generating backend from kibs\.config\.json/i);
+  assert.match(result.stdout, /Generated: backend\/src\/controllers\/employees\.js/i);
+  assert.match(result.stdout, /Copy \.env\.example to \.env/i);
+
+  const generatedRoutes = fs.readFileSync(
+    path.join(tempDirectory, "backend/src/routes/index.js"),
+    "utf8"
+  );
+  assert.match(generatedRoutes, /router\.use\("\/employees", employeesRouter\)/);
 });

@@ -76,7 +76,7 @@ demo-app/
   README.md
 ```
 
-The generated backend is runnable after installing its dependencies. The generated frontend is a structured starter prepared for React + Tailwind setup in future Kibs generation work, without introducing a frontend scaffolding framework here.
+The generated backend starts as a minimal Express shell after `kibs init`. In Phase 6, `kibs generate` upgrades that backend into entity CRUD routes and controllers based on `kibs.config.json`. The generated frontend is still a structured starter prepared for React + Tailwind setup in future Kibs generation work, without introducing a frontend scaffolding framework here.
 
 ## `kibs.config.json`
 
@@ -108,7 +108,7 @@ Example:
 }
 ```
 
-`entities`, `relationships`, and `reports` start empty in Phase 3. In Phase 4, `kibs add entity` writes entity definitions into `entities`.
+`entities`, `relationships`, and `reports` start empty in Phase 3. In Phase 4, `kibs add entity` writes entity definitions into `entities`. In Phase 6, `kibs generate` reads `entities` and produces backend CRUD files from them.
 
 Entity names must be non-empty, trimmed, and use singular PascalCase such as `Employee` or `ParkingRecord`.
 
@@ -156,15 +156,60 @@ Kibs now exposes deterministic naming helpers for future generation phases. The 
 - controller name: plural PascalCase plus `Controller`, for example `ParkingRecordsController`
 - frontend page/component names: plural PascalCase plus `Page` and singular PascalCase plus `Form`
 
-## Generated backend
+## `kibs generate`
+
+Run generation inside a Kibs project:
+
+```powershell
+cd demo-app
+node ..\src\cli.js generate
+```
+
+This generates or updates:
+
+- `backend/package.json`
+- `backend/.env.example`
+- `backend/src/app.js`
+- `backend/src/server.js`
+- `backend/src/config/database.js`
+- `backend/src/routes/index.js`
+- one route file per entity in `backend/src/routes/`
+- one controller file per entity in `backend/src/controllers/`
+
+Entity route names, controller files, and table names use the Phase 5 naming helpers. Foreign-key relationships are derived from `foreignKey` fields already stored in entity definitions. Kibs does not use `relationships` as a second backend relationship source of truth in v1.
+
+Generated backend example for `Department` and `Employee`:
+
+```text
+backend/
+  .env.example
+  package.json
+  src/
+    app.js
+    server.js
+    config/
+      database.js
+    controllers/
+      departments.js
+      employees.js
+    routes/
+      index.js
+      departments.js
+      employees.js
+```
+
+The generated backend uses direct `mysql2` queries with simple CRUD handlers so a junior developer can read and edit the files without learning an ORM first.
+
+## Run the generated backend
 
 ```powershell
 cd demo-app\\backend
 npm install
+copy .env.example .env
 npm start
 ```
 
-The backend starts on port `3001` by default and returns a basic JSON payload from `/`.
+The backend starts on port `3001` by default, returns a basic JSON payload from `/`, exposes `/api` routes, and reads database settings from `.env`.
 
 ## Current status
 
@@ -175,7 +220,7 @@ Currently available command status:
 - `kibs init`: implemented
 - `kibs add entity`: implemented
 - `kibs add auth`: registered placeholder
-- `kibs generate`: registered placeholder
+- `kibs generate`: implemented for backend generation
 
 ## Test the CLI
 
@@ -194,4 +239,5 @@ Try adding an entity inside a generated project:
 ```powershell
 cd demo-app
 node ..\src\cli.js add entity
+node ..\src\cli.js generate
 ```
